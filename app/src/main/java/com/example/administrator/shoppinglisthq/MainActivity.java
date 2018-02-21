@@ -2,11 +2,16 @@ package com.example.administrator.shoppinglisthq;
 
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import java.util.List;
@@ -23,18 +28,69 @@ public class MainActivity extends AppCompatActivity {
         ShoppingMemo testMemo = new ShoppingMemo("Birnen",5,102);
         Log.d(TAG, "onCreate: Inhalt der Testmemo: " + testMemo.toString());
         datasource = new ShoppingMemoDatasource(this);
-        Log.d(TAG, "onCreate: Die Datenquelle wird geöffnet");
+        activateAddButton();
+
+
+        //ShoppingMemo shoppingMemo = datasource.createShoppingMemo("Testprodukt", 2);
+        //Log.d(TAG, "onCreate: Folgendes wurde in DB eingetragen");
+        //Log.d(TAG, "ID: " + shoppingMemo.getId() + " Inhalt: " + shoppingMemo.toString());
+
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.d(TAG, "onPause: Die Datenquelle wird geschlossen");
+        datasource.close();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        Log.d(TAG, "onResume: Die Datenquelle wird geöffnet");
         datasource.open();
-
-        ShoppingMemo shoppingMemo = datasource.createShoppingMemo("Testprodukt", 2);
-        Log.d(TAG, "onCreate: Folgendes wurde in DB eingetragen");
-        Log.d(TAG, "ID: " + shoppingMemo.getId() + " Inhalt: " + shoppingMemo.toString());
-
         Log.d(TAG, "folgende Einträge sind in der DB vorhanden: ");
         showAllListEntries();
+    }
 
-        Log.d(TAG, "onCreate: Die Datenquelle wird geschlossen");
-        datasource.close();
+    private void activateAddButton() {
+        Button button = findViewById(R.id.button_add_product);
+        final EditText editTextQuantity = findViewById(R.id.editText_quantity);
+        final EditText editTextProduct = findViewById(R.id.editText_product);
+
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String quantity = editTextQuantity.getText().toString();
+                String product = editTextProduct.getText().toString();
+
+                if (TextUtils.isEmpty(quantity)){
+                    editTextQuantity.setError(getString(R.string.editText_errorMessage));
+                    editTextQuantity.requestFocus();
+                    return;
+                }
+
+                if (TextUtils.isEmpty(product)){
+                    editTextProduct.setError(getString(R.string.editText_errorMessage));
+                    editTextProduct.requestFocus();
+                    return;
+                }
+                int quantity_int = Integer.parseInt(quantity);
+                editTextProduct.setText("");
+                editTextQuantity.setText("");
+
+                datasource.createShoppingMemo(product, quantity_int);
+
+                InputMethodManager inputMethodManager =
+                        (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                if (getCurrentFocus() != null){
+                    inputMethodManager.hideSoftInputFromWindow(getCurrentFocus().getWindowToken(),0);
+                }
+                editTextQuantity.requestFocus();
+
+                showAllListEntries();
+            }
+        });
     }
 
     private void showAllListEntries() {
