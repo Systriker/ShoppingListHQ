@@ -5,4 +5,8 @@
         android:icon="@android:drawable/ic_menu_delete"
         android:title="@string/cab_delete"/>
 
+    <item android:id="@+id/cab_edit"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:title="@string/cab_edit"/>
+
 </menu>

@@ -66,6 +66,22 @@ public class ShoppingMemoDatasource {
         Log.d(TAG, "deleteShoppingMemo: Eintrag gelöscht" + id + " " + memo.toString());
     }
 
+    public ShoppingMemo updateShioppingMemeo(long id, String newProduct, int newQuantity){
+        ContentValues values = new ContentValues();
+        values.put(ShoppingMemoDbHelper.COLUMN_PRODUCT,newProduct);
+        values.put(ShoppingMemoDbHelper.COLUMN_QUANTITY,newQuantity);
+
+        database.update(ShoppingMemoDbHelper.TABLE_SHOPPING_LIST,values,
+                ShoppingMemoDbHelper.COLUMN_ID + "=" + id,null);
+        Cursor cursor = database.query(ShoppingMemoDbHelper.TABLE_SHOPPING_LIST,
+                columns,ShoppingMemoDbHelper.COLUMN_ID + "=" + id,
+                null,null,null,null);
+        cursor.moveToFirst();
+        ShoppingMemo memo = cursorToShoppingMemo(cursor);
+        cursor.close();
+        return memo;
+    }
+
     private ShoppingMemo cursorToShoppingMemo(Cursor cursor) {
         int idIndex = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_ID);
         int idPrduct = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_PRODUCT);

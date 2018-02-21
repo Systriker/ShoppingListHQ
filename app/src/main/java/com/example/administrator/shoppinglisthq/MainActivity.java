@@ -1,11 +1,14 @@
 package com.example.administrator.shoppinglisthq;
 
+import android.content.DialogInterface;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.SparseBooleanArray;
 import android.view.ActionMode;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -16,6 +19,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.List;
 
@@ -96,8 +100,18 @@ public class MainActivity extends AppCompatActivity {
         shoppingMemoListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE_MODAL);
 
         shoppingMemoListView.setMultiChoiceModeListener(new AbsListView.MultiChoiceModeListener() {
+            int selCount = 0;
             @Override
-            public void onItemCheckedStateChanged(ActionMode actionMode, int i, long l, boolean b) {}
+            public void onItemCheckedStateChanged(ActionMode actionMode, int position, long id, boolean checked) {
+                if (checked){
+                    selCount++;
+                }else{
+                    selCount--;
+                }
+                String cabTitle = selCount + " " + getString(R.string.cab_checked_string);
+                actionMode.setTitle(cabTitle);
+                actionMode.invalidate();
+            }
 
             @Override
             public boolean onCreateActionMode(ActionMode actionMode, Menu menu) {
@@ -106,15 +120,25 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) { return false; }
+            public boolean onPrepareActionMode(ActionMode actionMode, Menu menu) {
+                MenuItem item = menu.findItem(R.id.cab_edit);
+                if(selCount == 1){
+                    item.setVisible(true);
+                }else {
+                    item.setVisible(false);
+                }
+                return true;
+
+            }
 
             @Override
             public boolean onActionItemClicked(ActionMode actionMode, MenuItem menuItem) {
+                SparseBooleanArray touchedShoppingMemosPosition = shoppingMemoListView.
+                        getCheckedItemPositions();
                 switch (menuItem.getItemId()) {
 
                     case R.id.cab_delete:
-                        SparseBooleanArray touchedShoppingMemosPosition = shoppingMemoListView.
-                                getCheckedItemPositions();
+
                         for (int i = 0; i < touchedShoppingMemosPosition.size(); i++) {
                             boolean isChecked = touchedShoppingMemosPosition.valueAt(i);
                             if (isChecked) {
@@ -129,13 +153,30 @@ public class MainActivity extends AppCompatActivity {
                         showAllListEntries();
                         actionMode.finish();
                         return true;
+                    case R.id.cab_edit:
+                        for (int i = 0; i < touchedShoppingMemosPosition.size(); i++) {
+                            boolean isChecked = touchedShoppingMemosPosition.valueAt(i);
+                            if (isChecked) {
+                                int positionInListView = touchedShoppingMemosPosition.keyAt(i);
+                                ShoppingMemo memo = (ShoppingMemo) shoppingMemoListView.
+                                        getItemAtPosition(positionInListView);
+                                Log.d(TAG, "onActionItemClicked: Position in Listview: " + positionInListView +
+                                        " Inhalt: " + memo.toString());
+                                AlertDialog alertDialog = createEditShoppingMemoDialog(memo);
+                                alertDialog.show();
+                            }
+                        }
+                        actionMode.finish();
+                        return true;
                     default:
                         return false;
                 }
             }
 
             @Override
-            public void onDestroyActionMode(ActionMode actionMode) {}
+            public void onDestroyActionMode(ActionMode actionMode) {
+                selCount = 0;
+            }
         });
 
     }
@@ -150,6 +191,52 @@ public class MainActivity extends AppCompatActivity {
         ListView shoppingMemoListView = findViewById(R.id.listview_shopping_memos);
         shoppingMemoListView.setAdapter(shoppingMemoArrayAdapter);
 
+    }
+
+    private AlertDialog createEditShoppingMemoDialog(final ShoppingMemo memo){
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        final LayoutInflater inflater = getLayoutInflater();
+        final View dialogsView = inflater.inflate(R.layout.dialog_edit_shopping_memo,null);
+
+        final EditText editTextNewQuantity = dialogsView.findViewById(R.id.editText_new_quantity);
+        editTextNewQuantity.setText(String.valueOf(memo.getQuantity()));
+
+        final EditText editTextNewProduct = dialogsView.findViewById(R.id.editText_new_product);
+        editTextNewProduct.setText(memo.getProduct());
+
+        builder.setView(dialogsView)
+                .setTitle(R.string.dialog_title)
+                .setPositiveButton(R.string.dialog_button_positive, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        String quantity = editTextNewQuantity.getText().toString();
+                        String product = editTextNewProduct.getText().toString();
+
+                        if ((TextUtils.isEmpty(quantity))||(TextUtils.isEmpty(product))){
+                            Toast.makeText(MainActivity.this,"Felder dürfen nicht leer sein",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        int quantity_int = Integer.parseInt(quantity);
+                        ShoppingMemo updatedShopingMemo = datasource.updateShioppingMemeo(memo.getId(),
+                                product,quantity_int);
+                        Log.d(TAG, "onClick: alt:" + memo.getId() + " : " + memo.toString());
+                        Log.d(TAG, "onClick: neu:" + updatedShopingMemo.getId() + " : " +
+                                updatedShopingMemo.toString());
+
+                        showAllListEntries();
+                        dialogInterface.dismiss();
+                    }
+                })
+                .setNegativeButton(R.string.dialog_button_negative, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        dialogInterface.cancel();
+                    }
+                });
+
+        return builder.create();
     }
 
     @Override
