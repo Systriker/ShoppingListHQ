@@ -29,7 +29,7 @@ public class ShoppingMemoDbHelper extends SQLiteOpenHelper {
             COLUMN_QUANTITY + " INTEGER NOT NULL ," +
             COLUMN_CHECKED + " BOOLEAN NOT NULL DEFAULT 0);";
 
-    public static final String SQL_DROP = "DROP TABLE IF EXIST" + TABLE_SHOPPING_LIST;
+    public static final String SQL_DROP = "DROP TABLE IF EXISTS" + TABLE_SHOPPING_LIST;
 
     public ShoppingMemoDbHelper(Context context){
         super(context,DB_NAME, null,DB_VERSION);

@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
     private void initializeShoppingMemosListView() {
         List<ShoppingMemo> emtyListForInitialisation = new ArrayList<>();
 
+        shoppingMemosListView = findViewById(R.id.listview_shopping_memos);
         ArrayAdapter<ShoppingMemo> shoppingMemoArrayAdapter = new ArrayAdapter<ShoppingMemo>(this,
                 android.R.layout.simple_list_item_multiple_choice,emtyListForInitialisation){
             @NonNull
