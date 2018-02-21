@@ -58,6 +58,14 @@ public class ShoppingMemoDatasource {
         return shoppingMemo;
     }
 
+    public void deleteShoppingMemo(ShoppingMemo memo){
+        long id = memo.getId();
+
+        database.delete(ShoppingMemoDbHelper.TABLE_SHOPPING_LIST,
+                ShoppingMemoDbHelper.COLUMN_ID + "=" + id, null);
+        Log.d(TAG, "deleteShoppingMemo: Eintrag gelöscht" + id + " " + memo.toString());
+    }
+
     private ShoppingMemo cursorToShoppingMemo(Cursor cursor) {
         int idIndex = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_ID);
         int idPrduct = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_PRODUCT);
