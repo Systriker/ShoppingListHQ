@@ -23,7 +23,8 @@ public class ShoppingMemoDatasource {
     private String[] columns = {
             ShoppingMemoDbHelper.COLUMN_ID,
             ShoppingMemoDbHelper.COLUMN_PRODUCT,
-            ShoppingMemoDbHelper.COLUMN_QUANTITY
+            ShoppingMemoDbHelper.COLUMN_QUANTITY,
+            ShoppingMemoDbHelper.COLUMN_CHECKED
     };
 
     public ShoppingMemoDatasource(Context context){
@@ -66,10 +67,12 @@ public class ShoppingMemoDatasource {
         Log.d(TAG, "deleteShoppingMemo: Eintrag gelöscht" + id + " " + memo.toString());
     }
 
-    public ShoppingMemo updateShioppingMemeo(long id, String newProduct, int newQuantity){
+    public ShoppingMemo updateShioppingMemeo(long id, String newProduct, int newQuantity, boolean newChecked){
+        int intValueChecked = newChecked?1:0;
         ContentValues values = new ContentValues();
         values.put(ShoppingMemoDbHelper.COLUMN_PRODUCT,newProduct);
         values.put(ShoppingMemoDbHelper.COLUMN_QUANTITY,newQuantity);
+        values.put(ShoppingMemoDbHelper.COLUMN_CHECKED,intValueChecked);
 
         database.update(ShoppingMemoDbHelper.TABLE_SHOPPING_LIST,values,
                 ShoppingMemoDbHelper.COLUMN_ID + "=" + id,null);
@@ -86,11 +89,16 @@ public class ShoppingMemoDatasource {
         int idIndex = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_ID);
         int idPrduct = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_PRODUCT);
         int idQuanrity = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_QUANTITY);
+        int idChecked = cursor.getColumnIndex(ShoppingMemoDbHelper.COLUMN_CHECKED);
 
         String product = cursor.getString(idPrduct);
         int quantity = cursor.getInt(idQuanrity);
         long id = cursor.getLong(idIndex);
-        ShoppingMemo memo = new ShoppingMemo(product,quantity,id);
+        int intValueChecked = cursor.getInt(idChecked);
+
+        boolean isChecked = (intValueChecked != 0);
+
+        ShoppingMemo memo = new ShoppingMemo(product,quantity,id,isChecked);
         return memo;
     }
 

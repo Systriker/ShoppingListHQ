@@ -1,6 +1,10 @@
 package com.example.administrator.shoppinglisthq;
 
 import android.content.DialogInterface;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -13,28 +17,32 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AbsListView;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private ShoppingMemoDatasource datasource;
+    private ListView shoppingMemosListView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        ShoppingMemo testMemo = new ShoppingMemo("Birnen",5,102);
-        Log.d(TAG, "onCreate: Inhalt der Testmemo: " + testMemo.toString());
         datasource = new ShoppingMemoDatasource(this);
+        initializeShoppingMemosListView();
         activateAddButton();
         initializeContextualActionBar();
     }
@@ -53,6 +61,41 @@ public class MainActivity extends AppCompatActivity {
         datasource.open();
         Log.d(TAG, "folgende Einträge sind in der DB vorhanden: ");
         showAllListEntries();
+    }
+
+    private void initializeShoppingMemosListView() {
+        List<ShoppingMemo> emtyListForInitialisation = new ArrayList<>();
+
+        ArrayAdapter<ShoppingMemo> shoppingMemoArrayAdapter = new ArrayAdapter<ShoppingMemo>(this,
+                android.R.layout.simple_list_item_multiple_choice,emtyListForInitialisation){
+            @NonNull
+            @Override
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                TextView textView = (TextView) view;
+
+                ShoppingMemo memo = (ShoppingMemo) shoppingMemosListView.getItemAtPosition(position);
+                if (memo.isChecked()){
+                    textView.setPaintFlags(textView.getPaintFlags()| Paint.STRIKE_THRU_TEXT_FLAG);
+                    textView.setTextColor(Color.rgb(175,175,175));
+                }else{
+                    textView.setPaintFlags(textView.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+                    textView.setTextColor(Color.DKGRAY);
+                }
+                return view;
+            }
+        };
+        shoppingMemosListView.setAdapter(shoppingMemoArrayAdapter);
+
+        shoppingMemosListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                ShoppingMemo memo = (ShoppingMemo) adapterView.getItemAtPosition(i);
+                ShoppingMemo updatedShoppingMemo = datasource.updateShioppingMemeo(memo.getId(),
+                        memo.getProduct(),memo.getQuantity(),!memo.isChecked());
+                showAllListEntries();
+            }
+        });
     }
 
     private void activateAddButton() {
@@ -183,14 +226,11 @@ public class MainActivity extends AppCompatActivity {
 
     private void showAllListEntries() {
         List<ShoppingMemo> shoppingMemoList = datasource.getAllShoppingMemos();
-        ArrayAdapter<ShoppingMemo> shoppingMemoArrayAdapter = new ArrayAdapter<ShoppingMemo>(
-                this,
-                android.R.layout.simple_list_item_multiple_choice,
-                shoppingMemoList
-        );
-        ListView shoppingMemoListView = findViewById(R.id.listview_shopping_memos);
-        shoppingMemoListView.setAdapter(shoppingMemoArrayAdapter);
-
+        ArrayAdapter<ShoppingMemo> shoppingMemoArrayAdapter =
+                (ArrayAdapter<ShoppingMemo>) shoppingMemosListView.getAdapter();
+        shoppingMemoArrayAdapter.clear();
+        shoppingMemoArrayAdapter.addAll(shoppingMemoList);
+        shoppingMemoArrayAdapter.notifyDataSetChanged();
     }
 
     private AlertDialog createEditShoppingMemoDialog(final ShoppingMemo memo){
@@ -220,7 +260,7 @@ public class MainActivity extends AppCompatActivity {
                         }
                         int quantity_int = Integer.parseInt(quantity);
                         ShoppingMemo updatedShopingMemo = datasource.updateShioppingMemeo(memo.getId(),
-                                product,quantity_int);
+                                product,quantity_int,memo.isChecked());
                         Log.d(TAG, "onClick: alt:" + memo.getId() + " : " + memo.toString());
                         Log.d(TAG, "onClick: neu:" + updatedShopingMemo.getId() + " : " +
                                 updatedShopingMemo.toString());
